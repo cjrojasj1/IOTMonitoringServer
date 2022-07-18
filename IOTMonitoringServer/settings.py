@@ -178,3 +178,5 @@ MQTT_USE_TLS = False
 # Ubicación del archivo de certificado para conexión TLS con el bróker MQTT
 CA_CRT_FILE = "ssl/ca.crt"
 CA_CRT_PATH = os.path.join(os.path.dirname(__file__), CA_CRT_FILE)
+
+USE_TZ = False
