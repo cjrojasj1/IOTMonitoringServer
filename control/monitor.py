@@ -19,10 +19,10 @@ def analyze_data():
     print("Calculando alertas...")
 
     data = Data.objects.filter(
-        base_time__gte=datetime.now() - timedelta(hours=1))
-
+        base_time__gte=datetime.now() - timedelta(days=1))
+    
     data_light = Data.objects.filter(
-        base_time__gte=datetime.now())
+        base_time__gte=datetime.now() - timedelta(hours=1))
         
     aggregation = data.annotate(check_value=Avg('avg_value')) \
         .select_related('station', 'measurement') \
@@ -53,6 +53,7 @@ def analyze_data():
     alerts = 0
     for item in aggregation:
         alert = False
+        alert_light = False
 
         variable = item["measurement__name"]
         max_value = item["measurement__max_value"] or 0
@@ -71,10 +72,12 @@ def analyze_data():
             if variable_light == 'luminosidad':
                 if variable == 'luminosidad':
                     if item_light["check_value"] < item["check_value"]:
-                        alert = True
+                        alert_light = True
+                        min_value = item_light["check_value"]
+                        max_value = item["check_value"]
                     break
 
-        if alert:
+        if alert or alert_light:
             message = "ALERT {} {} {}".format(variable, min_value, max_value)
             topic = '{}/{}/{}/{}/in'.format(country, state, city, user)
             print(datetime.now(), "Sending alert to {} {}".format(topic, variable))
@@ -131,7 +134,7 @@ def start_cron():
     Inicia el cron que se encarga de ejecutar la función analyze_data cada 5 minutos.
     '''
     print("Iniciando cron...")
-    schedule.every(10).seconds.do(analyze_data)
+    schedule.every(1).minutes.do(analyze_data)
     print("Servicio de control iniciado")
     while 1:
         schedule.run_pending()
